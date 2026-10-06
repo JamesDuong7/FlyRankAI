@@ -38,6 +38,31 @@ app.post('/tasks', (req, res) => {
   res.status(201).json(task);
 });
 
+app.put('/tasks/:id', (req, res) => {
+  const task = tasks.find((item) => item.id === Number(req.params.id));
+  if (!task) return res.status(404).json({ error: `Task ${req.params.id} not found` });
+
+  const body = req.body;
+  const validBody = body && typeof body === 'object' && !Array.isArray(body);
+  const keys = validBody ? Object.keys(body) : [];
+  if (!keys.length || keys.some((key) => !['title', 'done'].includes(key)) ||
+      ('title' in body && (typeof body.title !== 'string' || !body.title.trim())) ||
+      ('done' in body && typeof body.done !== 'boolean')) {
+    return res.status(400).json({ error: 'Provide a nonempty title and/or a boolean done' });
+  }
+
+  if ('title' in body) task.title = body.title.trim();
+  if ('done' in body) task.done = body.done;
+  res.json(task);
+});
+
+app.delete('/tasks/:id', (req, res) => {
+  const index = tasks.findIndex((item) => item.id === Number(req.params.id));
+  if (index === -1) return res.status(404).json({ error: `Task ${req.params.id} not found` });
+  tasks.splice(index, 1);
+  res.status(204).end();
+});
+
 app.use((error, _req, res, next) => {
   if (error instanceof SyntaxError && 'body' in error) {
     return res.status(400).json({ error: 'Invalid JSON body' });
