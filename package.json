@@ -1,0 +1,16 @@
+{
+  "name": "flyrankai",
+  "version": "1.0.0",
+  "description": "A small in-memory task CRUD API",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^4.22.3"
+  }
+}
