@@ -1,0 +1,103 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Task API",
+    "version": "1.0",
+    "description": "A small in-memory to-do list API. Tasks reset whenever the server restarts."
+  },
+  "servers": [{ "url": "/" }],
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Describe the API",
+        "responses": {
+          "200": { "description": "API name, version, and task endpoint", "content": { "application/json": { "schema": { "type": "object" } } } }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Check server health",
+        "responses": {
+          "200": { "description": "The server is running", "content": { "application/json": { "schema": { "type": "object", "properties": { "status": { "type": "string", "example": "ok" } } } } } }
+        }
+      }
+    },
+    "/tasks": {
+      "get": {
+        "summary": "List all tasks",
+        "responses": {
+          "200": { "description": "All tasks", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Task" } } } } }
+        }
+      },
+      "post": {
+        "summary": "Create a task",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateTask" } } } },
+        "responses": {
+          "201": { "description": "Task created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Task" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/tasks/{id}": {
+      "parameters": [{ "name": "id", "in": "path", "required": true, "description": "Numeric task ID", "schema": { "type": "integer", "minimum": 1 } }],
+      "get": {
+        "summary": "Get one task",
+        "responses": {
+          "200": { "description": "Matching task", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Task" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "summary": "Update a task",
+        "description": "Provide title, done, or both.",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateTask" } } } },
+        "responses": {
+          "200": { "description": "Updated task", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Task" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "summary": "Delete a task",
+        "responses": {
+          "204": { "description": "Task deleted; no response body" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Task": {
+        "type": "object",
+        "required": ["id", "title", "done"],
+        "properties": {
+          "id": { "type": "integer", "example": 4 },
+          "title": { "type": "string", "example": "Buy milk" },
+          "done": { "type": "boolean", "example": false }
+        }
+      },
+      "CreateTask": {
+        "type": "object",
+        "required": ["title"],
+        "additionalProperties": false,
+        "properties": { "title": { "type": "string", "minLength": 1, "example": "Buy milk" } }
+      },
+      "UpdateTask": {
+        "type": "object",
+        "minProperties": 1,
+        "additionalProperties": false,
+        "properties": {
+          "title": { "type": "string", "minLength": 1 },
+          "done": { "type": "boolean" }
+        },
+        "example": { "done": true }
+      }
+    },
+    "responses": {
+      "BadRequest": { "description": "Invalid JSON or task fields", "content": { "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" } } } } } },
+      "NotFound": { "description": "Task ID does not exist", "content": { "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string", "example": "Task 99 not found" } } } } } }
+    }
+  }
+}
