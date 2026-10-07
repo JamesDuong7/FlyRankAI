@@ -1,7 +1,7 @@
 const express = require('express');
 const swaggerUi = require('swagger-ui-express');
 const openapi = require('./openapi.json');
-require('./db');
+const db = require('./db');
 
 const app = express();
 const port = 3000;
@@ -13,6 +13,7 @@ const tasks = [
   { id: 3, title: 'Write a task', done: false },
 ];
 let nextId = 4;
+const toTask = (row) => ({ ...row, done: Boolean(row.done) });
 
 app.get('/', (_req, res) => {
   res.json({ name: 'Task API', version: '1.0', endpoints: ['/tasks'] });
@@ -23,13 +24,13 @@ app.get('/health', (_req, res) => {
 });
 
 app.get('/tasks', (_req, res) => {
-  res.json(tasks);
+  res.json(db.prepare('SELECT id, title, done FROM tasks ORDER BY id').all().map(toTask));
 });
 
 app.get('/tasks/:id', (req, res) => {
-  const task = tasks.find((item) => item.id === Number(req.params.id));
-  if (!task) return res.status(404).json({ error: `Task ${req.params.id} not found` });
-  res.json(task);
+  const row = db.prepare('SELECT id, title, done FROM tasks WHERE id = ?').get(Number(req.params.id));
+  if (!row) return res.status(404).json({ error: `Task ${req.params.id} not found` });
+  res.json(toTask(row));
 });
 
 app.post('/tasks', (req, res) => {
