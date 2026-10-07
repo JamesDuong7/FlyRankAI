@@ -1,17 +1,17 @@
 # Task API
 
-A small to-do list REST API built with Node.js and Express. Tasks live in memory, and [Swagger UI](http://localhost:3000/docs/) lets you send requests from your browser.
+A small to-do list REST API built with Node.js, Express, and SQLite. Tasks survive server restarts, and [Swagger UI](http://localhost:3000/docs/) lets you send requests from your browser.
 
 ## Run locally
 
-Install Node.js 20 or newer, then run these commands in the repository folder:
+Install Node.js 22 or newer, then run these commands in the repository folder:
 
 ```sh
 npm ci
 npm start
 ```
 
-The server starts at `http://localhost:3000`. Open `http://localhost:3000/docs/` for Swagger UI. Stop the server with Ctrl+C. `npm ci` installs the versions in `package-lock.json`; `npm start` is the command that runs the server.
+The server starts at `http://localhost:3000`. Open `http://localhost:3000/docs/` for Swagger UI. Stop the server with Ctrl+C. `npm ci` installs the versions in `package-lock.json`; `npm start` is the command that runs the server. On its first start, the app creates `tasks.db` and the `tasks` table automatically.
 
 ## Endpoints
 
@@ -47,4 +47,10 @@ Open `/docs/`, expand an endpoint, click **Try it out**, fill in the body or ID,
 
 ## Data lifetime
 
-The server starts with three example tasks. New and edited tasks are stored only in a JavaScript array. Restarting the server restores the three examples and removes changes made during the previous run, because there is no database or file storage.
+SQLite stores tasks in `tasks.db` beside `index.js` in this repository folder. SQLite was chosen because it persists data in one local file and needs no separate database server. The file is ignored by Git, so each clone creates its own database.
+
+The app inserts three example tasks when it first creates the table. Later restarts keep your changes. If you delete every task, the table stays empty after a restart.
+
+To inspect the database with a SQLite viewer, open `tasks.db`. For example, I ran `SELECT COUNT(*) FROM tasks;` in DB Browser for SQLite; it returned `3` for three local demo tasks. [The SQL exploration notes](docs/sql-exploration.md) record the other queries and their effect on the API.
+
+![DB Browser for SQLite showing the tasks table](docs/sqlite-browser.jpg)

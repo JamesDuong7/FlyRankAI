@@ -1,7 +1,7 @@
 {
   "name": "flyrankai",
   "version": "1.0.0",
-  "description": "A small in-memory task CRUD API",
+  "description": "A small SQLite-backed task CRUD API",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
@@ -10,6 +10,9 @@
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "engines": {
+    "node": ">=22"
+  },
   "dependencies": {
     "better-sqlite3": "^13.0.3",
     "express": "^4.22.3",

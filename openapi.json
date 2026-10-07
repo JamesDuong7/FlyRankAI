@@ -3,7 +3,7 @@
   "info": {
     "title": "Task API",
     "version": "1.0",
-    "description": "A small in-memory to-do list API. Tasks reset whenever the server restarts."
+    "description": "A small SQLite-backed to-do list API. Tasks survive server restarts."
   },
   "servers": [{ "url": "/" }],
   "paths": {
