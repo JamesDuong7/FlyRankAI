@@ -12,7 +12,6 @@ const tasks = [
   { id: 2, title: 'Review API notes', done: true },
   { id: 3, title: 'Write a task', done: false },
 ];
-let nextId = 4;
 const toTask = (row) => ({ ...row, done: Boolean(row.done) });
 
 app.get('/', (_req, res) => {
@@ -38,8 +37,8 @@ app.post('/tasks', (req, res) => {
   if (typeof title !== 'string' || !title.trim()) {
     return res.status(400).json({ error: 'title must be a nonempty string' });
   }
-  const task = { id: nextId++, title: title.trim(), done: false };
-  tasks.push(task);
+  const result = db.prepare('INSERT INTO tasks (title, done) VALUES (?, ?)').run(title.trim(), 0);
+  const task = { id: Number(result.lastInsertRowid), title: title.trim(), done: false };
   res.status(201).json(task);
 });
 
