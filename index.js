@@ -7,11 +7,6 @@ const app = express();
 const port = 3000;
 app.use(express.json());
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapi));
-const tasks = [
-  { id: 1, title: 'Plan the week', done: false },
-  { id: 2, title: 'Review API notes', done: true },
-  { id: 3, title: 'Write a task', done: false },
-];
 const toTask = (row) => ({ ...row, done: Boolean(row.done) });
 
 app.get('/', (_req, res) => {
@@ -43,7 +38,7 @@ app.post('/tasks', (req, res) => {
 });
 
 app.put('/tasks/:id', (req, res) => {
-  const task = tasks.find((item) => item.id === Number(req.params.id));
+  const task = db.prepare('SELECT id, title, done FROM tasks WHERE id = ?').get(Number(req.params.id));
   if (!task) return res.status(404).json({ error: `Task ${req.params.id} not found` });
 
   const body = req.body;
@@ -55,15 +50,15 @@ app.put('/tasks/:id', (req, res) => {
     return res.status(400).json({ error: 'Provide a nonempty title and/or a boolean done' });
   }
 
-  if ('title' in body) task.title = body.title.trim();
-  if ('done' in body) task.done = body.done;
-  res.json(task);
+  const title = 'title' in body ? body.title.trim() : task.title;
+  const done = 'done' in body ? Number(body.done) : task.done;
+  db.prepare('UPDATE tasks SET title = ?, done = ? WHERE id = ?').run(title, done, task.id);
+  res.json(toTask({ id: task.id, title, done }));
 });
 
 app.delete('/tasks/:id', (req, res) => {
-  const index = tasks.findIndex((item) => item.id === Number(req.params.id));
-  if (index === -1) return res.status(404).json({ error: `Task ${req.params.id} not found` });
-  tasks.splice(index, 1);
+  const result = db.prepare('DELETE FROM tasks WHERE id = ?').run(Number(req.params.id));
+  if (!result.changes) return res.status(404).json({ error: `Task ${req.params.id} not found` });
   res.status(204).end();
 });
 
