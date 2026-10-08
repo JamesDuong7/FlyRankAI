@@ -4,3 +4,4 @@ tasks.db
 tasks.db-shm
 tasks.db-wal
 tasks.db-journal
+.env

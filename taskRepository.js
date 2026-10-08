@@ -1,23 +1,36 @@
-const db = require('./db');
+const { Pool } = require('pg');
 
-const toTask = (row) => row && { ...row, done: Boolean(row.done) };
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+pool.on('error', (error) => {
+  console.error('Unexpected PostgreSQL connection error:', error);
+});
 
 module.exports = {
   async list() {
-    return db.prepare('SELECT id, title, done FROM tasks ORDER BY id').all().map(toTask);
+    const { rows } = await pool.query('SELECT id, title, done FROM tasks ORDER BY id');
+    return rows;
   },
   async get(id) {
-    return toTask(db.prepare('SELECT id, title, done FROM tasks WHERE id = ?').get(id));
+    const { rows } = await pool.query('SELECT id, title, done FROM tasks WHERE id = $1', [id]);
+    return rows[0] || null;
   },
   async create(title) {
-    const result = db.prepare('INSERT INTO tasks (title, done) VALUES (?, ?)').run(title, 0);
-    return { id: Number(result.lastInsertRowid), title, done: false };
+    const { rows } = await pool.query(
+      'INSERT INTO tasks (title) VALUES ($1) RETURNING id, title, done',
+      [title]
+    );
+    return rows[0];
   },
   async update(id, { title, done }) {
-    const result = db.prepare('UPDATE tasks SET title = ?, done = ? WHERE id = ?').run(title, Number(done), id);
-    return result.changes ? { id, title, done } : null;
+    const { rows } = await pool.query(
+      'UPDATE tasks SET title = $1, done = $2 WHERE id = $3 RETURNING id, title, done',
+      [title, done, id]
+    );
+    return rows[0] || null;
   },
   async remove(id) {
-    return db.prepare('DELETE FROM tasks WHERE id = ?').run(id).changes > 0;
+    const result = await pool.query('DELETE FROM tasks WHERE id = $1', [id]);
+    return result.rowCount > 0;
   },
 };

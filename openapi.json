@@ -3,7 +3,7 @@
   "info": {
     "title": "Task API",
     "version": "1.0",
-    "description": "A small SQLite-backed to-do list API. Tasks survive server restarts."
+    "description": "A small PostgreSQL-backed to-do list API. Tasks survive app and database container restarts."
   },
   "servers": [{ "url": "/" }],
   "paths": {
