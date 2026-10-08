@@ -1,13 +1,14 @@
 const express = require('express');
 const swaggerUi = require('swagger-ui-express');
 const openapi = require('./openapi.json');
-const db = require('./db');
+const tasks = require('./taskService');
 
 const app = express();
 const port = 3000;
+const asyncRoute = (handler) => (req, res, next) => Promise.resolve(handler(req, res)).catch(next);
+
 app.use(express.json());
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapi));
-const toTask = (row) => ({ ...row, done: Boolean(row.done) });
 
 app.get('/', (_req, res) => {
   res.json({ name: 'Task API', version: '1.0', endpoints: ['/tasks'] });
@@ -17,58 +18,36 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
-app.get('/tasks', (_req, res) => {
-  res.json(db.prepare('SELECT id, title, done FROM tasks ORDER BY id').all().map(toTask));
-});
+app.get('/tasks', asyncRoute(async (_req, res) => {
+  res.json(await tasks.list());
+}));
 
-app.get('/tasks/:id', (req, res) => {
-  const row = db.prepare('SELECT id, title, done FROM tasks WHERE id = ?').get(Number(req.params.id));
-  if (!row) return res.status(404).json({ error: `Task ${req.params.id} not found` });
-  res.json(toTask(row));
-});
+app.get('/tasks/:id', asyncRoute(async (req, res) => {
+  res.json(await tasks.get(Number(req.params.id), req.params.id));
+}));
 
-app.post('/tasks', (req, res) => {
-  const title = req.body?.title;
-  if (typeof title !== 'string' || !title.trim()) {
-    return res.status(400).json({ error: 'title must be a nonempty string' });
-  }
-  const result = db.prepare('INSERT INTO tasks (title, done) VALUES (?, ?)').run(title.trim(), 0);
-  const task = { id: Number(result.lastInsertRowid), title: title.trim(), done: false };
-  res.status(201).json(task);
-});
+app.post('/tasks', asyncRoute(async (req, res) => {
+  res.status(201).json(await tasks.create(req.body));
+}));
 
-app.put('/tasks/:id', (req, res) => {
-  const task = db.prepare('SELECT id, title, done FROM tasks WHERE id = ?').get(Number(req.params.id));
-  if (!task) return res.status(404).json({ error: `Task ${req.params.id} not found` });
+app.put('/tasks/:id', asyncRoute(async (req, res) => {
+  res.json(await tasks.update(Number(req.params.id), req.params.id, req.body));
+}));
 
-  const body = req.body;
-  const validBody = body && typeof body === 'object' && !Array.isArray(body);
-  const keys = validBody ? Object.keys(body) : [];
-  if (!keys.length || keys.some((key) => !['title', 'done'].includes(key)) ||
-      ('title' in body && (typeof body.title !== 'string' || !body.title.trim())) ||
-      ('done' in body && typeof body.done !== 'boolean')) {
-    return res.status(400).json({ error: 'Provide a nonempty title and/or a boolean done' });
-  }
-
-  const title = 'title' in body ? body.title.trim() : task.title;
-  const done = 'done' in body ? Number(body.done) : task.done;
-  db.prepare('UPDATE tasks SET title = ?, done = ? WHERE id = ?').run(title, done, task.id);
-  res.json(toTask({ id: task.id, title, done }));
-});
-
-app.delete('/tasks/:id', (req, res) => {
-  const result = db.prepare('DELETE FROM tasks WHERE id = ?').run(Number(req.params.id));
-  if (!result.changes) return res.status(404).json({ error: `Task ${req.params.id} not found` });
+app.delete('/tasks/:id', asyncRoute(async (req, res) => {
+  await tasks.remove(Number(req.params.id), req.params.id);
   res.status(204).end();
-});
+}));
 
-app.use((error, _req, res, next) => {
+app.use((error, _req, res, _next) => {
   if (error instanceof SyntaxError && 'body' in error) {
     return res.status(400).json({ error: 'Invalid JSON body' });
   }
-  next(error);
+  if (error.status) return res.status(error.status).json({ error: error.message });
+  console.error(error);
+  res.status(500).json({ error: 'Internal server error' });
 });
 
-app.listen(port, '127.0.0.1', () => {
+app.listen(port, '0.0.0.0', () => {
   console.log(`Task API listening at http://localhost:${port}`);
 });
