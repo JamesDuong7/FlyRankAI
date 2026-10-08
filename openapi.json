@@ -314,7 +314,7 @@
     "/auth/logout": {
       "post": {
         "summary": "End the current session",
-        "description": "Revokes the session refresh token. The access token remains valid until its JWT expiry.",
+        "description": "Revokes the session refresh token. This API verifies protected requests with Supabase getUser(), which rejected the signed-out token in the live test. A signature-only verifier may accept the JWT until expiry.",
         "security": [
           {
             "bearerAuth": []

@@ -71,7 +71,7 @@ curl -i -X POST http://localhost:3000/auth/logout \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 
-Logout revokes the current session's **refresh token** through Supabase Auth. Supabase does not revoke an already issued access JWT immediately; that JWT can pass protected routes until its expiry. The client should discard both tokens after logout. Set a short JWT lifetime in Supabase when faster expiry matters. The server does not store session tokens or log credentials.
+Logout revokes the current session's **refresh token** through Supabase Auth. Supabase does not erase the cryptographic validity of an already issued JWT, but this API calls `getUser(token)` on each protected request; in the live logout check, Supabase rejected the logged-out token immediately with 401. Clients should still discard both tokens. Another service that only checks the JWT signature may accept it until expiry, so use a short JWT lifetime where that matters. The server does not store session tokens or log credentials.
 
 ## Swagger UI
 
