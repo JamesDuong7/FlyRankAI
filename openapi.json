@@ -1,17 +1,30 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "Task API",
-    "version": "1.0",
-    "description": "A small PostgreSQL-backed to-do list API. Tasks survive app and database container restarts."
+    "title": "FlyRankAI Auth and Task API",
+    "version": "2.0",
+    "description": "Supabase-authenticated task API. Tasks are shared among signed-in users."
   },
-  "servers": [{ "url": "/" }],
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
   "paths": {
     "/": {
       "get": {
         "summary": "Describe the API",
         "responses": {
-          "200": { "description": "API name, version, and task endpoint", "content": { "application/json": { "schema": { "type": "object" } } } }
+          "200": {
+            "description": "API name, version, and task endpoint",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -19,7 +32,22 @@
       "get": {
         "summary": "Check server health",
         "responses": {
-          "200": { "description": "The server is running", "content": { "application/json": { "schema": { "type": "object", "properties": { "status": { "type": "string", "example": "ok" } } } } } }
+          "200": {
+            "description": "The server is running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -27,42 +55,369 @@
       "get": {
         "summary": "List all tasks",
         "responses": {
-          "200": { "description": "All tasks", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Task" } } } } }
-        }
+          "200": {
+            "description": "All tasks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Task"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "502": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       },
       "post": {
         "summary": "Create a task",
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateTask" } } } },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTask"
+              }
+            }
+          }
+        },
         "responses": {
-          "201": { "description": "Task created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Task" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" }
-        }
+          "201": {
+            "description": "Task created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "502": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/tasks/{id}": {
-      "parameters": [{ "name": "id", "in": "path", "required": true, "description": "Numeric task ID", "schema": { "type": "integer", "minimum": 1 } }],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "Numeric task ID",
+          "schema": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      ],
       "get": {
         "summary": "Get one task",
         "responses": {
-          "200": { "description": "Matching task", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Task" } } } },
-          "404": { "$ref": "#/components/responses/NotFound" }
-        }
+          "200": {
+            "description": "Matching task",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "502": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       },
       "put": {
         "summary": "Update a task",
         "description": "Provide title, done, or both.",
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateTask" } } } },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTask"
+              }
+            }
+          }
+        },
         "responses": {
-          "200": { "description": "Updated task", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Task" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "404": { "$ref": "#/components/responses/NotFound" }
-        }
+          "200": {
+            "description": "Updated task",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "502": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       },
       "delete": {
         "summary": "Delete a task",
         "responses": {
-          "204": { "description": "Task deleted; no response body" },
-          "404": { "$ref": "#/components/responses/NotFound" }
+          "204": {
+            "description": "Task deleted; no response body"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "502": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/auth/signup": {
+      "post": {
+        "summary": "Create a user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credentials"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "502": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Log in and obtain tokens",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credentials"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Access and refresh tokens",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "access_token": {
+                      "type": "string"
+                    },
+                    "refresh_token": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "502": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "summary": "End the current session",
+        "description": "Revokes the session refresh token. The access token remains valid until its JWT expiry.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Session ended; no response body"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "502": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/public/info": {
+      "get": {
+        "summary": "Read public information",
+        "responses": {
+          "200": {
+            "description": "Public message",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Welcome stranger! This info is public."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/protected/profile": {
+      "get": {
+        "summary": "Read your verified profile",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "502": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/protected/dashboard": {
+      "get": {
+        "summary": "Read the authenticated dashboard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dashboard greeting and user ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "user_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "502": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
         }
       }
     }
@@ -71,33 +426,160 @@
     "schemas": {
       "Task": {
         "type": "object",
-        "required": ["id", "title", "done"],
+        "required": [
+          "id",
+          "title",
+          "done"
+        ],
         "properties": {
-          "id": { "type": "integer", "example": 4 },
-          "title": { "type": "string", "example": "Buy milk" },
-          "done": { "type": "boolean", "example": false }
+          "id": {
+            "type": "integer",
+            "example": 4
+          },
+          "title": {
+            "type": "string",
+            "example": "Buy milk"
+          },
+          "done": {
+            "type": "boolean",
+            "example": false
+          }
         }
       },
       "CreateTask": {
         "type": "object",
-        "required": ["title"],
+        "required": [
+          "title"
+        ],
         "additionalProperties": false,
-        "properties": { "title": { "type": "string", "minLength": 1, "example": "Buy milk" } }
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "example": "Buy milk"
+          }
+        }
       },
       "UpdateTask": {
         "type": "object",
         "minProperties": 1,
         "additionalProperties": false,
         "properties": {
-          "title": { "type": "string", "minLength": 1 },
-          "done": { "type": "boolean" }
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "done": {
+            "type": "boolean"
+          }
         },
-        "example": { "done": true }
+        "example": {
+          "done": true
+        }
+      },
+      "Credentials": {
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "format": "password"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "Profile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
       }
     },
     "responses": {
-      "BadRequest": { "description": "Invalid JSON or task fields", "content": { "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" } } } } } },
-      "NotFound": { "description": "Task ID does not exist", "content": { "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string", "example": "Task 99 not found" } } } } } }
+      "BadRequest": {
+        "description": "Invalid JSON or task fields",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Task ID does not exist",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "Task 99 not found"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Missing, invalid, or expired bearer token",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "ServiceUnavailable": {
+        "description": "Supabase Auth is unavailable",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Paste the access_token returned by POST /auth/login."
+      }
     }
   }
 }
