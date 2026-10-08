@@ -1,7 +1,7 @@
 const express = require('express');
 const swaggerUi = require('swagger-ui-express');
 const openapi = require('./openapi.json');
-const { createAuthClient } = require('./supabaseClient');
+const { createAuthClient, url: supabaseUrl, key: supabaseKey } = require('./supabaseClient');
 const tasks = require('./taskService');
 
 const app = express();
@@ -10,7 +10,7 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
   throw new Error('PORT must be an integer between 1 and 65535');
 }
 createAuthClient();
-const asyncRoute = (handler) => (req, res, next) => Promise.resolve(handler(req, res)).catch(next);
+const asyncRoute = (handler) => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 
 app.use(express.json());
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapi));
@@ -57,19 +57,44 @@ app.get('/public/info', (_req, res) => {
   res.json({ message: 'Welcome stranger! This info is public.' });
 });
 
-app.get('/protected/profile', asyncRoute(async (req, res) => {
+const requireAuth = asyncRoute(async (req, res, next) => {
   const header = req.get('Authorization');
   if (!header || !/^Bearer [^\s]+$/.test(header)) {
     return res.status(401).json({ error: 'Access token required' });
   }
-  const { data, error } = await createAuthClient().auth.getUser(header.slice(7));
+  const token = header.slice(7);
+  const { data, error } = await createAuthClient().auth.getUser(token);
   if (error || !data.user) {
     return res.status(error?.status >= 500 ? 502 : 401)
       .json({ error: error?.status >= 500 ? 'Authentication service unavailable' : 'Invalid or expired token' });
   }
-  const { id, email, created_at } = data.user;
+  req.user = data.user;
+  req.accessToken = token;
+  next();
+});
+
+app.get('/protected/profile', requireAuth, (req, res) => {
+  const { id, email, created_at } = req.user;
   res.json({ id, email, created_at });
+});
+
+app.get('/protected/dashboard', requireAuth, (req, res) => {
+  res.json({ message: 'Welcome to your dashboard', user_id: req.user.id });
+});
+
+app.post('/auth/logout', requireAuth, asyncRoute(async (req, res) => {
+  const response = await fetch(`${supabaseUrl}/auth/v1/logout?scope=local`, {
+    method: 'POST',
+    headers: {
+      apikey: supabaseKey,
+      Authorization: `Bearer ${req.accessToken}`,
+    },
+  });
+  if (!response.ok) return res.status(502).json({ error: 'Could not end session' });
+  res.status(204).end();
 }));
+
+app.use('/tasks', requireAuth);
 
 app.get('/tasks', asyncRoute(async (_req, res) => {
   res.json(await tasks.list());
