@@ -23,6 +23,36 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
+const credentials = (body) => {
+  const email = body?.email;
+  const password = body?.password;
+  if (typeof email !== 'string' || !email.trim() ||
+      typeof password !== 'string' || !password.trim()) return null;
+  return { email: email.trim(), password };
+};
+
+app.post('/auth/signup', asyncRoute(async (req, res) => {
+  const input = credentials(req.body);
+  if (!input) return res.status(400).json({ error: 'Email and password are required' });
+  const { data, error } = await createAuthClient().auth.signUp(input);
+  if (error) {
+    return res.status(error.status >= 500 || !error.status ? 502 : 400)
+      .json({ error: error.status >= 500 || !error.status ? 'Authentication service unavailable' : error.message });
+  }
+  res.status(201).json({ user: data.user });
+}));
+
+app.post('/auth/login', asyncRoute(async (req, res) => {
+  const input = credentials(req.body);
+  if (!input) return res.status(400).json({ error: 'Email and password are required' });
+  const { data, error } = await createAuthClient().auth.signInWithPassword(input);
+  if (error) {
+    return res.status(error.status >= 500 || !error.status ? 502 : 401)
+      .json({ error: error.status >= 500 || !error.status ? 'Authentication service unavailable' : 'Invalid login credentials' });
+  }
+  res.json({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
+}));
+
 app.get('/tasks', asyncRoute(async (_req, res) => {
   res.json(await tasks.list());
 }));
