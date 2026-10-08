@@ -11,12 +11,21 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
 }
 createAuthClient();
 const asyncRoute = (handler) => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
+const authCall = async (operation) => {
+  try {
+    return await operation();
+  } catch (_error) {
+    const error = new Error('Authentication service unavailable');
+    error.status = 502;
+    throw error;
+  }
+};
 
 app.use(express.json());
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapi));
 
 app.get('/', (_req, res) => {
-  res.json({ name: 'Task API', version: '1.0', endpoints: ['/tasks'] });
+  res.json({ name: 'FlyRankAI Auth and Task API', version: '2.0', endpoints: ['/auth/signup', '/auth/login', '/public/info', '/protected/profile', '/tasks', '/docs/'] });
 });
 
 app.get('/health', (_req, res) => {
@@ -34,7 +43,7 @@ const credentials = (body) => {
 app.post('/auth/signup', asyncRoute(async (req, res) => {
   const input = credentials(req.body);
   if (!input) return res.status(400).json({ error: 'Email and password are required' });
-  const { data, error } = await createAuthClient().auth.signUp(input);
+  const { data, error } = await authCall(() => createAuthClient().auth.signUp(input));
   if (error) {
     return res.status(error.status >= 500 || !error.status ? 502 : 400)
       .json({ error: error.status >= 500 || !error.status ? 'Authentication service unavailable' : error.message });
@@ -45,10 +54,11 @@ app.post('/auth/signup', asyncRoute(async (req, res) => {
 app.post('/auth/login', asyncRoute(async (req, res) => {
   const input = credentials(req.body);
   if (!input) return res.status(400).json({ error: 'Email and password are required' });
-  const { data, error } = await createAuthClient().auth.signInWithPassword(input);
-  if (error) {
-    return res.status(error.status >= 500 || !error.status ? 502 : 401)
-      .json({ error: error.status >= 500 || !error.status ? 'Authentication service unavailable' : 'Invalid login credentials' });
+  const { data, error } = await authCall(() => createAuthClient().auth.signInWithPassword(input));
+  if (error || !data.session) {
+    const unavailable = error && (error.status >= 500 || !error.status);
+    return res.status(unavailable ? 502 : 401)
+      .json({ error: unavailable ? 'Authentication service unavailable' : 'Invalid login credentials' });
   }
   res.json({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
 }));
@@ -63,10 +73,11 @@ const requireAuth = asyncRoute(async (req, res, next) => {
     return res.status(401).json({ error: 'Access token required' });
   }
   const token = header.slice(7);
-  const { data, error } = await createAuthClient().auth.getUser(token);
+  const { data, error } = await authCall(() => createAuthClient().auth.getUser(token));
   if (error || !data.user) {
-    return res.status(error?.status >= 500 ? 502 : 401)
-      .json({ error: error?.status >= 500 ? 'Authentication service unavailable' : 'Invalid or expired token' });
+    const unavailable = error && (error.status >= 500 || !error.status);
+    return res.status(unavailable ? 502 : 401)
+      .json({ error: unavailable ? 'Authentication service unavailable' : 'Invalid or expired token' });
   }
   req.user = data.user;
   req.accessToken = token;
@@ -83,13 +94,13 @@ app.get('/protected/dashboard', requireAuth, (req, res) => {
 });
 
 app.post('/auth/logout', requireAuth, asyncRoute(async (req, res) => {
-  const response = await fetch(`${supabaseUrl}/auth/v1/logout?scope=local`, {
+  const response = await authCall(() => fetch(`${supabaseUrl}/auth/v1/logout?scope=local`, {
     method: 'POST',
     headers: {
       apikey: supabaseKey,
       Authorization: `Bearer ${req.accessToken}`,
     },
-  });
+  }));
   if (!response.ok) return res.status(502).json({ error: 'Could not end session' });
   res.status(204).end();
 }));
