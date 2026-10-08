@@ -53,6 +53,18 @@ app.post('/auth/login', asyncRoute(async (req, res) => {
   res.json({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
 }));
 
+app.get('/public/info', (_req, res) => {
+  res.json({ message: 'Welcome stranger! This info is public.' });
+});
+
+app.get('/protected/profile', (req, res) => {
+  const header = req.get('Authorization');
+  if (!header || !/^Bearer [^\s]+$/.test(header)) {
+    return res.status(401).json({ error: 'Access token required' });
+  }
+  res.status(501).json({ error: 'Token verification is not implemented yet' });
+});
+
 app.get('/tasks', asyncRoute(async (_req, res) => {
   res.json(await tasks.list());
 }));
