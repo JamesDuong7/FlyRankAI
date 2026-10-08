@@ -1,17 +1,21 @@
 # Task API
 
-A small to-do list REST API built with Node.js, Express, and SQLite. Tasks survive server restarts, and [Swagger UI](http://localhost:3000/docs/) lets you send requests from your browser.
+A small to-do list REST API built with Node.js, Express, and PostgreSQL. Docker Compose starts the app and database together. [Swagger UI](http://localhost:3000/docs/) lets you send requests from your browser.
 
-## Run locally
+## Run the stack
 
-Install Node.js 22 or newer, then run these commands in the repository folder:
+Install and start [Docker Desktop](https://docs.docker.com/desktop/setup/install/mac-install/). From this repository folder, run:
 
 ```sh
-npm ci
-npm start
+cp .env.example .env
+docker compose up
 ```
 
-The server starts at `http://localhost:3000`. Open `http://localhost:3000/docs/` for Swagger UI. Stop the server with Ctrl+C. `npm ci` installs the versions in `package-lock.json`; `npm start` is the command that runs the server. On its first start, the app creates `tasks.db` and the `tasks` table automatically.
+The copy is needed once per clone. Docker Compose builds the app, creates the named `postgres_data` volume, starts PostgreSQL, waits for its health check, and then starts the API at `http://localhost:3000`. Open `http://localhost:3000/docs/` for Swagger UI. Stop with Ctrl+C; use `docker compose down` to remove containers while retaining data. Subsequent starts need only `docker compose up`.
+
+`.env.example` contains local development credentials and a `DATABASE_URL` using the Compose service name `db`. Copy it to `.env` before starting. `.env` is ignored by Git and excluded from the Docker build context. Change the example credentials for any nonlocal deployment.
+
+The first start with a new volume runs [sql/init.sql](sql/init.sql), creating the `tasks` table and three example tasks. The SQL file runs only when PostgreSQL initializes an empty data directory. Deleting every task therefore leaves the database empty on later starts. `docker compose down -v` removes the volume and starts a new database on the next run.
 
 ## Endpoints
 
@@ -25,18 +29,32 @@ The server starts at `http://localhost:3000`. Open `http://localhost:3000/docs/`
 | PUT | `/tasks/:id` | Update `title`, `done`, or both | 200 |
 | DELETE | `/tasks/:id` | Remove a task | 204 |
 
-Missing tasks return 404 with a JSON `error`. POST needs a nonempty string `title`. PUT needs at least one valid field: a nonempty string `title` and/or a boolean `done`. Invalid bodies return 400 with a JSON `error`.
+Missing tasks return 404 with a JSON `error`, such as `{"error":"Task 99 not found"}`. POST needs a nonempty string `title`. PUT needs at least one valid field: a nonempty string `title` and/or a boolean `done`. Invalid bodies return 400 with a JSON `error`. Task responses contain JSON booleans.
 
-Example request and response from `curl -i`:
+For example, on a new volume:
 
-```text
-$ curl -i -X POST http://localhost:3000/tasks -H 'Content-Type: application/json' -d '{"title":"Buy milk"}'
-HTTP/1.1 201 Created
-X-Powered-By: Express
-Content-Type: application/json; charset=utf-8
-Content-Length: 40
+```sh
+curl -i -X POST http://localhost:3000/tasks \
+  -H 'Content-Type: application/json' \
+  -d '{"title":"Buy milk"}'
+```
 
-{"id":4,"title":"Buy milk","done":false}
+This returns 201 with `{"id":4,"title":"Buy milk","done":false}`. IDs continue increasing as rows are added.
+
+## Repository boundary
+
+`index.js` defines the HTTP routes and calls `taskService.js`. The service owns validation and missing-task errors. `taskRepository.js` implements asynchronous `list`, `get`, `create`, `update`, and `remove` methods with parameterized `pg` queries. PostgreSQL is the only active backend.
+
+The initial A3 extraction changed the routes to call the service and used a SQLite implementation of this repository interface. After that checkpoint passed the HTTP contract, the storage swap changed `taskRepository.js` and dependency/configuration files; `index.js` and `taskService.js` did not change. The earlier SQLite version remains in Git history.
+
+## Persistence check
+
+On a fresh named volume, `GET /tasks` returned the three examples. I created task 4 with POST, updated its title and `done` with PUT, restarted both containers with `docker compose restart db app`, and confirmed `GET /tasks/4` still returned the updated row. I then ran `docker compose down` followed by `docker compose up -d`; `GET /tasks` still returned the original three tasks and task 4, with no duplicate examples. The volume stores the data independently of either container.
+
+To inspect the table directly while the stack is running:
+
+```sh
+docker compose exec db psql -U taskapi -d tasks -c 'SELECT id, title, done FROM tasks ORDER BY id;'
 ```
 
 ## Swagger UI
@@ -45,12 +63,4 @@ Content-Length: 40
 
 Open `/docs/`, expand an endpoint, click **Try it out**, fill in the body or ID, and click **Execute**. You can create a task, list it, update it, and delete it without a separate API client.
 
-## Data lifetime
-
-SQLite stores tasks in `tasks.db` beside `index.js` in this repository folder. SQLite was chosen because it persists data in one local file and needs no separate database server. The file is ignored by Git, so each clone creates its own database.
-
-The app inserts three example tasks when it first creates the table. Later restarts keep your changes. If you delete every task, the table stays empty after a restart.
-
-To inspect the database with a SQLite viewer, open `tasks.db`. For example, I ran `SELECT COUNT(*) FROM tasks;` in DB Browser for SQLite; it returned `3` for three local demo tasks. [The SQL exploration notes](docs/sql-exploration.md) record the other queries and their effect on the API.
-
-![DB Browser for SQLite showing the tasks table](docs/sqlite-browser.jpg)
+The [A2 SQL exploration notes](docs/sql-exploration.md) and [SQLite viewer screenshot](docs/sqlite-browser.jpg) document the earlier assignment. The running stack now uses PostgreSQL.
