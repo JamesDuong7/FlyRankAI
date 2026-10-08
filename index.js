@@ -1,10 +1,15 @@
 const express = require('express');
 const swaggerUi = require('swagger-ui-express');
 const openapi = require('./openapi.json');
+const { createAuthClient } = require('./supabaseClient');
 const tasks = require('./taskService');
 
 const app = express();
-const port = 3000;
+const port = Number(process.env.PORT || 3000);
+if (!Number.isInteger(port) || port < 1 || port > 65535) {
+  throw new Error('PORT must be an integer between 1 and 65535');
+}
+createAuthClient();
 const asyncRoute = (handler) => (req, res, next) => Promise.resolve(handler(req, res)).catch(next);
 
 app.use(express.json());
@@ -49,5 +54,5 @@ app.use((error, _req, res, _next) => {
 });
 
 app.listen(port, '0.0.0.0', () => {
-  console.log(`Task API listening at http://localhost:${port}`);
+  console.log(`Task API listening at http://localhost:${port}; Supabase client configured`);
 });
