@@ -57,13 +57,19 @@ app.get('/public/info', (_req, res) => {
   res.json({ message: 'Welcome stranger! This info is public.' });
 });
 
-app.get('/protected/profile', (req, res) => {
+app.get('/protected/profile', asyncRoute(async (req, res) => {
   const header = req.get('Authorization');
   if (!header || !/^Bearer [^\s]+$/.test(header)) {
     return res.status(401).json({ error: 'Access token required' });
   }
-  res.status(501).json({ error: 'Token verification is not implemented yet' });
-});
+  const { data, error } = await createAuthClient().auth.getUser(header.slice(7));
+  if (error || !data.user) {
+    return res.status(error?.status >= 500 ? 502 : 401)
+      .json({ error: error?.status >= 500 ? 'Authentication service unavailable' : 'Invalid or expired token' });
+  }
+  const { id, email, created_at } = data.user;
+  res.json({ id, email, created_at });
+}));
 
 app.get('/tasks', asyncRoute(async (_req, res) => {
   res.json(await tasks.list());
