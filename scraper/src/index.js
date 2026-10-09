@@ -1,7 +1,10 @@
 'use strict';
 
-const TARGET_URL = 'https://books.toscrape.com/';
+const { Fetcher, BASE_URL } = require('./fetcher');
 
 if (require.main === module) {
-  console.log(`Target: ${TARGET_URL}`);
+  new Fetcher().get(BASE_URL).catch((error) => {
+    console.error(error.message);
+    process.exitCode = 1;
+  });
 }
