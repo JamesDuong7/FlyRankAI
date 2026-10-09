@@ -72,7 +72,16 @@ class Fetcher {
         error.status = response.status;
         throw error;
       }
-      const html = await response.text();
+      let html;
+      try {
+        html = await response.text();
+      } catch (error) {
+        if (attempt === 1 && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
+          await sleep(1000);
+          continue;
+        }
+        throw error;
+      }
       const fetchedAt = new Date().toISOString();
       await fs.mkdir(this.cacheDir, { recursive: true });
       await fs.writeFile(file, html);
