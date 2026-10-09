@@ -1,0 +1,14 @@
+{
+  "start_time": "2026-10-09T06:21:27.280Z",
+  "duration_ms": 120,
+  "catalogue_pages": 3,
+  "discovered": 60,
+  "unique_urls": 60,
+  "detail_pages": 60,
+  "pages_fetched": 0,
+  "cache_hits": 63,
+  "requests_made": 0,
+  "valid_records": 60,
+  "invalid_records": 0,
+  "failed_pages": 0
+}

@@ -1,5 +1,7 @@
 # FlyRankAI Auth and Task API
 
+The Week 5 polite scraper is in [scraper/](scraper/README.md). It runs independently of this API.
+
 A Node.js and Express API with Supabase Auth, PostgreSQL-backed tasks, and interactive Swagger UI. Sign up, log in, pass the returned JWT as a bearer token, and use authenticated routes. Task records are shared among signed-in users; this demo does not assign tasks to individual accounts.
 
 ## Run locally
