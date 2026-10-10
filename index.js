@@ -72,6 +72,9 @@ app.get('/public/info', (_req, res) => {
 app.post('/normalize', asyncRoute(async (req, res) => {
   const parsed = inputSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: describeIssues(parsed.error) });
+  if (process.env.LLM_ENABLED === 'false') {
+    return res.status(503).json({ error: 'Title normalization is temporarily disabled' });
+  }
   if (process.env.LLM_STUB === '1') return res.json(stubResponse);
   return res.json(await normalize(parsed.data.title));
 }));
