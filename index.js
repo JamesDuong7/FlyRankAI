@@ -4,6 +4,7 @@ const openapi = require('./openapi.json');
 const { createAuthClient, url: supabaseUrl, key: supabaseKey } = require('./supabaseClient');
 const tasks = require('./taskService');
 const { inputSchema, stubResponse, describeIssues } = require('./src/llm/schema');
+const { completeRaw } = require('./src/llm/client');
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
@@ -72,7 +73,8 @@ app.post('/normalize', asyncRoute(async (req, res) => {
   const parsed = inputSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: describeIssues(parsed.error) });
   if (process.env.LLM_STUB === '1') return res.json(stubResponse);
-  return res.status(503).json({ error: 'LLM integration is not configured yet' });
+  const raw = await completeRaw(parsed.data.title);
+  return res.type('text/plain').send(raw);
 }));
 
 const requireAuth = asyncRoute(async (req, res, next) => {
