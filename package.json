@@ -4,7 +4,9 @@
   "description": "A small PostgreSQL-backed task CRUD API",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "test": "node --test",
+    "eval": "node evals/run.js"
   },
   "keywords": [],
   "author": "",

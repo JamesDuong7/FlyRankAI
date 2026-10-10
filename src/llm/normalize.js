@@ -56,16 +56,16 @@ async function quarantine(title, raw, error) {
   }
 }
 
-async function normalize(title) {
-  const firstRaw = await completeRaw(title);
+async function normalize(title, complete = completeRaw, quarantineResult = quarantine) {
+  const firstRaw = await complete(title);
   try {
     return validateRaw(firstRaw);
   } catch (firstError) {
-    const secondRaw = await completeRaw(title, { raw: firstRaw, error: firstError.message });
+    const secondRaw = await complete(title, { raw: firstRaw, error: firstError.message });
     try {
       return validateRaw(secondRaw);
     } catch (secondError) {
-      await quarantine(title, secondRaw, secondError.message);
+      await quarantineResult(title, secondRaw, secondError.message);
       const error = new Error('LLM could not produce a valid normalized title');
       error.status = 422;
       throw error;

@@ -1,0 +1,10 @@
+[
+  { "input": "Sr. SWE II", "expected": "Senior Software Engineer" },
+  { "input": "Full Stack Software Developer", "expected": "Software Engineer" },
+  { "input": "React UI Engineer", "expected": "Frontend Engineer" },
+  { "input": "Server-side API Developer", "expected": "Backend Engineer" },
+  { "input": "ETL Pipeline Engineer", "expected": "Data Engineer" },
+  { "input": "Machine Learning Engineer", "expected": "Machine Learning Engineer" },
+  { "input": "Cloud Infrastructure / DevOps Engineer", "expected": "DevOps Engineer" },
+  { "input": "Technical Specialist", "expected": "Other" }
+]
