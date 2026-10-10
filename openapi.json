@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "FlyRankAI Auth and Task API",
-    "version": "2.0",
-    "description": "Supabase-authenticated task API. Tasks are shared among signed-in users."
+    "version": "2.1",
+    "description": "Supabase-authenticated task API with public job-title normalization. Tasks are shared among signed-in users."
   },
   "servers": [
     {
@@ -48,6 +48,35 @@
               }
             }
           }
+        }
+      }
+    },
+    "/normalize": {
+      "post": {
+        "summary": "Normalize one CS job title",
+        "description": "Classifies a messy title into one closed-list canonical role.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/NormalizeInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Validated normalized title",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/NormalizeOutput" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "422": { "$ref": "#/components/responses/BadRequest" },
+          "502": { "$ref": "#/components/responses/ServiceUnavailable" },
+          "503": { "$ref": "#/components/responses/ServiceUnavailable" },
+          "504": { "$ref": "#/components/responses/ServiceUnavailable" }
         }
       }
     },
@@ -424,6 +453,27 @@
   },
   "components": {
     "schemas": {
+      "NormalizeInput": {
+        "type": "object",
+        "required": ["title"],
+        "additionalProperties": false,
+        "properties": {
+          "title": { "type": "string", "minLength": 1, "maxLength": 200, "example": "Sr. SWE II" }
+        }
+      },
+      "NormalizeOutput": {
+        "type": "object",
+        "required": ["canonical_title", "confidence", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "canonical_title": {
+            "type": "string",
+            "enum": ["Software Engineer", "Senior Software Engineer", "Frontend Engineer", "Backend Engineer", "Data Engineer", "Machine Learning Engineer", "DevOps Engineer", "Other"]
+          },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "reason": { "type": "string", "minLength": 1, "maxLength": 160 }
+        }
+      },
       "Task": {
         "type": "object",
         "required": [

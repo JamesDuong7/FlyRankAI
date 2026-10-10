@@ -3,6 +3,7 @@ const swaggerUi = require('swagger-ui-express');
 const openapi = require('./openapi.json');
 const { createAuthClient, url: supabaseUrl, key: supabaseKey } = require('./supabaseClient');
 const tasks = require('./taskService');
+const { inputSchema, stubResponse, describeIssues } = require('./src/llm/schema');
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
@@ -25,7 +26,7 @@ app.use(express.json());
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapi));
 
 app.get('/', (_req, res) => {
-  res.json({ name: 'FlyRankAI Auth and Task API', version: '2.0', endpoints: ['/auth/signup', '/auth/login', '/public/info', '/protected/profile', '/tasks', '/docs/'] });
+  res.json({ name: 'FlyRankAI Auth and Task API', version: '2.1', endpoints: ['/auth/signup', '/auth/login', '/public/info', '/protected/profile', '/tasks', '/normalize', '/docs/'] });
 });
 
 app.get('/health', (_req, res) => {
@@ -66,6 +67,13 @@ app.post('/auth/login', asyncRoute(async (req, res) => {
 app.get('/public/info', (_req, res) => {
   res.json({ message: 'Welcome stranger! This info is public.' });
 });
+
+app.post('/normalize', asyncRoute(async (req, res) => {
+  const parsed = inputSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: describeIssues(parsed.error) });
+  if (process.env.LLM_STUB === '1') return res.json(stubResponse);
+  return res.status(503).json({ error: 'LLM integration is not configured yet' });
+}));
 
 const requireAuth = asyncRoute(async (req, res, next) => {
   const header = req.get('Authorization');
