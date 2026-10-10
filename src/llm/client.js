@@ -17,7 +17,7 @@ function configuration() {
   return { baseURL, apiKey, model };
 }
 
-async function completeRaw(title) {
+async function completeRaw(title, repair = null) {
   const { baseURL, apiKey, model } = configuration();
   const client = new OpenAI({ baseURL, apiKey, timeout: 30000, maxRetries: 0 });
   const prompt = fs.readFileSync(promptPath, 'utf8');
@@ -27,6 +27,11 @@ async function completeRaw(title) {
     messages: [
       { role: 'system', content: prompt },
       { role: 'user', content: JSON.stringify({ title }) },
+      ...(repair ? [{ role: 'user', content: JSON.stringify({
+        instruction: 'Your previous answer was rejected for this reason. Return only corrected JSON matching the schema.',
+        previous_answer: repair.raw,
+        validation_error: repair.error,
+      }) }] : []),
     ],
   });
   return response.choices[0]?.message?.content ?? '';
