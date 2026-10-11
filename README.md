@@ -1,5 +1,28 @@
 # FlyRankAI: normalize CS job titles
 
+## Visual AI Workflow Studio
+
+The new [workflow app](apps/workflow) is a separate Next.js application. It opens with a bug report triage example: check reproduction details, then assess impact or investigation details. You can create YES/NO decision nodes, connect branches, edit prompts, select the start node, and evaluate case text through Inngest. The editor saves the graph in your browser and supports versioned JSON import/export. The existing Express API below remains available on port 3000.
+
+Use Node.js 22 or newer. In `apps/workflow`, install dependencies and create a local environment file:
+
+```sh
+cd apps/workflow
+npm ci
+cp .env.example .env.local
+```
+
+Set `LLM_BASE_URL`, `LLM_API_KEY`, and `LLM_MODEL` in `.env.local`. The repository's OpenRouter settings can be copied to those names. The key stays server-side. Start the app and Inngest in separate terminals:
+
+```sh
+cd apps/workflow && npm run dev
+cd apps/workflow && npx --ignore-scripts=false inngest-cli@latest dev -u http://localhost:3001/api/inngest
+```
+
+Open the studio at <http://localhost:3001> and the Inngest Dev Server at <http://localhost:8288>. Wait for the studio's **Live** indicator before running. The Inngest **Apps** page should list `flyrank-workflow`, and the **Functions** page should list `execute-workflow`. Each visited decision appears as a named Inngest step. An unconnected YES or NO output ends the run; duplicate outputs and cycles are rejected. Run `npm test`, `npm run lint`, and `npm run build` from `apps/workflow` to verify the app.
+
+This is a local demo: workflows live only in one browser and runs use a browser session cookie. A production deployment would need user authentication and durable workflow storage.
+
 `POST /normalize` turns one messy CS job title into a canonical role, a confidence score, and a short reason. For example, a recruiter’s “Sr. SWE II” can become “Senior Software Engineer.” The endpoint accepts one title at a time; it does not hold a conversation or save the title. Its output is checked before the API returns it.
 
 ## Run the title endpoint
