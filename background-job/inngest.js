@@ -35,4 +35,14 @@ const makeReport = inngest.createFunction(
   },
 );
 
-module.exports = { inngest, sayHello, makeReport };
+const heartbeat = inngest.createFunction(
+  { id: 'heartbeat', triggers: { cron: '* * * * *' } },
+  async () => {
+    const summary = { pending: 0, done: 0, failed: 0 };
+    for (const report of reports.values()) summary[report.status]++;
+    console.log(`Report heartbeat: pending=${summary.pending} done=${summary.done} failed=${summary.failed}`);
+    return summary;
+  },
+);
+
+module.exports = { inngest, sayHello, makeReport, heartbeat };
