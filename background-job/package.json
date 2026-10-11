@@ -7,9 +7,12 @@
     "node": ">=22"
   },
   "scripts": {
-    "start": "node index.js"
+    "start": "INNGEST_DEV=1 node index.js",
+    "inngest": "inngest-cli dev -u http://localhost:3000/api/inngest"
   },
   "dependencies": {
-    "express": "^4.22.3"
+    "express": "^4.22.3",
+    "inngest": "^4.23.0",
+    "inngest-cli": "^1.46.0"
   }
 }
