@@ -1,5 +1,9 @@
 # FlyRankAI: normalize CS job titles
 
+## PDF report generator
+
+The standalone [Week 4 bookstore PDF report generator](pdf-report-generator/README.md) seeds SQLite from the repository's 60 scraped books, generates a paginated PDF with Playwright, and serves it through a small Express API. Its README includes setup, SQL, API examples, and a screenshot.
+
 ## Visual AI Workflow Studio
 
 The new [workflow app](apps/workflow) is a separate Next.js application. It opens with a bug report triage example: check reproduction details, then assess impact or investigation details. You can create YES/NO decision nodes, connect branches, edit prompts, select the start node, and evaluate case text through Inngest. The editor saves the graph in your browser and supports versioned JSON import/export. The existing Express API below remains available on port 3000.

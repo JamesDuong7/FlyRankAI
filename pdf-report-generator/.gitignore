@@ -1,0 +1,6 @@
+node_modules/
+report.db
+report.db-shm
+report.db-wal
+report.db-journal
+reports/
