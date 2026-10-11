@@ -16,6 +16,11 @@ function openDb() {
       rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
       url TEXT NOT NULL UNIQUE
     );
+    CREATE TABLE IF NOT EXISTS reports (
+      id TEXT PRIMARY KEY,
+      path TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
   `);
   return db;
 }
